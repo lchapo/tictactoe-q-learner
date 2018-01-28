@@ -1,4 +1,4 @@
-"""simulates tic-tac-toe game, extensible to n size (2 dimensions)
+"""framework for a tic-tac-toe game
 
 file is organized into 3 classes:
 1) Board() governs the physical state of game board (e.g. how the size
@@ -17,14 +17,13 @@ import itertools
 import numpy as np
 import pandas as pd
 import random
+mapping = {"_":0,"O":1,"X":2} # for mapping strings to numerics
 
 class Board(object):
 	# class relating to the game board and its physical state
-
 	def __init__(self, size=3, o_positions = None, x_positions=None):
 	# size: length/width of the board
 		# create empty board
-		self.winner = None
 		self.size = size
 		self._reset_board()
 		self.players = ["X","O"] #TODO: replace with player class
@@ -32,15 +31,22 @@ class Board(object):
 	def _reset_board(self):
 		self.board = np.empty(shape=(self.size,self.size),dtype="string")
 		self.board.fill("_")
+		self.winner = None
+		self.numeric_board = self._get_numeric_board()
 
 		# define what's playable on an empty board
 		self.valid_actions = list(itertools.product(range(self.size),range(self.size)))
+
+	def _get_numeric_board(self):
+		# translate board position into numeric states
+		return np.vectorize(mapping.__getitem__)(self.board)
 
 	def update_board(self,action,player_sign):
 		print "chosen move is %s" %str(action)
 		if action in self.valid_actions:
 			self.board[action[0]][action[1]] = player_sign
 			self.valid_actions.remove(action)
+			self.numeric_board = self._get_numeric_board()
 		else:
 			print "Invalid action. Lose a turn"
 
@@ -60,38 +66,67 @@ class Board(object):
 
 class Player(object):
 
-	def __init__(self, sign, player_type="human"):
+	def __init__(self, sign, player_type="cpu", strategy=None):
 		self.sign = sign # X or O, traditionally
 		self.type = player_type # human, AI
+		self.strategy = strategy # optional strategy using tensorflow neural net
 
-	def choose_action(self, valid_actions):
+	def choose_action(self, valid_actions, numeric_board=None):
 		if self.type == "human":
-			action = (input("Enter move as row,col: "))
+			action = self._human_input_action(valid_actions)
+		elif self.strategy:
+			action = self._ai_action(valid_actions, numeric_board)
 		else:
 			action = self._choose_random_action(valid_actions)
 		return action
 
 	def _choose_random_action(self, valid_actions):
+		# picks a random action out of the set of valid moves
 		return random.choice(valid_actions)
+
+	def _human_input_action(self, valid_actions):
+		# asks for a terminal input to specify the move
+		return input("Enter move as row,col: ")
+
+	def _ai_action(self, valid_actions, numeric_board):
+		# takes in tensorflow model to decide the move
+		# also requires the current game board positions
+		# game board must be numeric, not Xs and Os
+		
+		# choose the move that maximizes expected Q
+		best_move = np.argmax(self.strategy.predict(numeric_board)[0])
+		action = (best_move/3,best_move%3)
+		return action
 
 class Game(object):
 	def __init__(self, board = Board(), p1 = Player("X"), p2 = Player("O")):
 		self.board = board
-
-		# TODO: fix random choice of who goes first
 		self.players = [p1,p2]
-		self.turn = p1 if random.random() <.5 else p2
-		self._change_turn = itertools.cycle(self.players).next
+		
+	def _reset_game(self):
+		# randomly choose who goes first and clear board
+		self.turn = self.players[0] if random.random() <=.5 else self.players[1]
+		self.board._reset_board()
 
 	def play_game(self):
+		self._reset_game()
+		# controls the mechanics of the game, returns a win or loss
+		print "New game. %s will go first" %self.turn.sign
 		while self.board.winner == None:
-			self.turn = self._change_turn()
-			print "\nPlayer %s's turn:" %self.turn.sign
-			self.board.update_board(
-				self.turn.choose_action(self.board.valid_actions),
-				self.turn.sign,
-			)
-			self.board.print_board()
-			self.board.check_for_winner()
+			try:
+				print "\nPlayer %s's turn:" %self.turn.sign
+				self.board.update_board(
+					self.turn.choose_action(self.board.valid_actions, self.board.numeric_board),
+					self.turn.sign,
+				)
+				self.board.print_board()
+				self.board.check_for_winner()
 
+				# change turns
+				self.turn = self.players[1] if self.turn.sign == "X" else self.players[0]
+			except IndexError:
+				self.board.winner = "tie"
+
+		# TODO: Reframe from P1's perspective (win/tie/loss)
 		print "%s has won!" %self.board.winner
+		return self.board.winner
