@@ -66,10 +66,11 @@ class Board(object):
 
 class Player(object):
 
-	def __init__(self, sign, player_type="cpu", strategy=None):
+	def __init__(self, sign="X", player_type="cpu", strategy=None, epsilon=0):
 		self.sign = sign # X or O, traditionally
 		self.type = player_type # human, AI
 		self.strategy = strategy # optional strategy using tensorflow neural net
+		self.epsilon = epsilon # exploration factor for AI player
 
 	def choose_action(self, valid_actions, numeric_board=None):
 		if self.type == "human":
@@ -93,9 +94,14 @@ class Player(object):
 		# also requires the current game board positions
 		# game board must be numeric, not Xs and Os
 		
-		# choose the move that maximizes expected Q
-		best_move = np.argmax(self.strategy.predict(numeric_board)[0])
-		action = (best_move/3,best_move%3)
+		# if random float is below epsilon, make random move
+		if random.random() < self.epsilon:
+			action = self._choose_random_action(valid_actions)
+		else:
+			# choose the move that maximizes expected Q
+			best_move = np.argmax(self.strategy.predict(numeric_board)[0])
+			action = (best_move/3,best_move%3)
+
 		return action
 
 class Game(object):
@@ -130,3 +136,4 @@ class Game(object):
 		# TODO: Reframe from P1's perspective (win/tie/loss)
 		print "%s has won!" %self.board.winner
 		return self.board.winner
+

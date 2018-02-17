@@ -11,8 +11,8 @@ import tensorflow as tf
 
 from environment import Player, Board, Game
 
-# initial test of random player vs random player
-def play_games(n_games=1000, visualize_win_ratio=True, p1=Player("X"), p2=Player("O")):
+# run some games
+def play_games(n_games=1000, p1=Player("X"), p2=Player("O")):
 	games = [Game(p1=p1, p2=p2) for i in range(n_games)]
 	metrics = []
 	for game in games:
@@ -22,13 +22,9 @@ def play_games(n_games=1000, visualize_win_ratio=True, p1=Player("X"), p2=Player
 	mapping = {"X":"win","O":"loss","tie":"tie"}
 	metrics = [mapping[i] for i in metrics]
 	print Counter(metrics)
-
-	if visualize_win_ratio:
-		_visualize_win_ratio(metrics)
-
 	return metrics
 
-def _visualize_win_ratio(score_metrics):
+def visualize_win_ratio(score_metrics):
 	# shows w/t/l ratio over time
 
 	# divide metrics into 10 parts for plotting purposes
