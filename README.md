@@ -4,7 +4,7 @@
 Run [main.py](https://github.com/lucaschapin/tictactoe-q-learner/blob/master/main.py) after uncommenting specific lines to train an AI to play tictactoe
 
 ## Overview
-This repo trains an AI to learn the game of tic tac toe, starting from scratch. The AI learns through trial and error without any human input to tell it the best strategy, and as it improves it plays saved versions of itself. The AI uses Q learning to do this and can build an optimal strategy from scratch after only a few hours of training on a MacBook Pro.
+This repo trains an AI to learn the game of tic tac toe, starting *tabula rasa* with no training data. The AI learns through self play without any human input other than the rules of the game and can build an optimal Q strategy after only a few hours of training on a MacBook Pro.
 
 ## How to run it yourself
 Clone this repo, uncomment a function of your choice from main.py, then run "python main.py" in the terminal to experiment with the Q learner. q_saved.p contains the AI's saved optimal Q strategy after several hours of training, but you can also train it yourself! Uncomment specific lines in main.py to do this. 
@@ -32,5 +32,5 @@ See [requirements.txt](https://github.com/lucaschapin/tictactoe-q-learner/blob/m
 ## Kudos
 In researching Q-learning in the context of adversarial games, the following sources were especially helpful:
 * [AlphaGo The Movie](https://www.rottentomatoes.com/m/alphago/) and [DeepMind's seminal research paper](https://www.nature.com/articles/nature24270.epdf) inspired this project in the first place. In particular, I was attracted to the idea of training an AI "tabula rasa" -- using only self play without any starting data or hard-coded strategies
-* [Scott Rome's blackjack learner](http://srome.github.io/Train-A-Neural_Net-To-Play-Black-Jack-With-Q-Learning/) for providing a clear guide to Q-learning in the context of an adversarial game
+* [Scott Rome's blackjack learner](http://srome.github.io/Train-A-Neural_Net-To-Play-Black-Jack-With-Q-Learning/) provided a clear guide to Q-learning in the context of an adversarial game
 * [Arthur Juliani's article](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0) helped me understand why a simple Q table was the right approach here and when a neural network starts to become more practical
