@@ -27,7 +27,7 @@ The tuple is a flattened version of our 2D tic tac toe game. Here's how it looks
 The tuples, e.g. `(1,0)` represent different possible actions that X could take in (row,col) format starting with 0 since that's how counting in python works and I was too lazy to make this more user friendly :). (1,0) is the middle left, (0,0) is the top left, (0,2) is the top right, and (2,2) is the bottom right. The corresponding values are Q values for each action given the current board state, where positive values mean that taking the action will generally lead to a win, and negative values mean taking that action will generally lead to a loss. Thus the Q-learner here recommends that we play in the bottom right, which makes since because this will win the game immediately. The next highest value is for the middle left, which would block O from winning. The other values are negative, which shows that in the Q learner's experience, these moves most often result in a loss. Over time, given enough simulations where we encounter this exact board positin, we'd expect the (2,2) action for this state to keep leading to wins and we'd see the Q-value converge toward the maximum value of 1.
 
 To update Q, we use the following formula:
-$$Q(s,a) = (1- learning_rate) * old_Q(s,a) + learning_rate * reward$$
+`Q(s,a) = (1- learning_rate) * old_Q(s,a) + learning_rate * reward`
 
 The "reward" is the eventual game outcome, which is either 1 for a win, 0 for a tie, or -1 for a loss. We move Q for this particular state and action toward the reward for the outcome of the game, and the magnitude of that Q-value adjustment is dependent on our choice of learning rate.
 
