@@ -1,7 +1,7 @@
-"""framework for a tic-tac-toe game
+"""Framework for a tic-tac-toe game
 
-file is organized into 2 classes:
-1) Board() governs the physical state of game board (e.g. how the size
+File is organized into 2 classes:
+1) Game() governs the physical state of game board (e.g. how the size
 	of the game board and current player positions) and the mechanics of
 	gameplay.
 2) Player() represents a human or AI player. For AI players, this class
@@ -17,22 +17,49 @@ import random
 class Player(object):
 	""" Represents a player (human or AI)
 	
+	Arguments:
+		strategy: one of a set number of strategies that the player will use
+			to take an action (decide on a move in the game)
+		learning_rate: rate from 0-1 that affects how malleable the Q learner
+			is in the current game. Lower rates will weight the Q-learner's
+			existing weights more heavily than the feedback from the current 
+			game, while higher rates will move Q rates more significantly.
+		epsilon: starting exploration factor. This determines the likelihood
+			that a Q-leaner will make a random move instead of using its 
+			Q-strategy (higher epsilon -> more likelihood of making random move)
+		learning: boolean that determines whether or not the player should 
+			update its Q strategy over time. Set to False when testing (this will
+			also set epsilon to 0)
+		load_Q: boolean that determines if the player should start with an 
+			existing Q strategy
+		q_file: filepath for loading Q strategy from a pickled file
+		sign: "X" or "O" representing player's positions on the board
+
 	This class represents a player and its chosen strategy, which will 
 	dictate how it plays tictactoe. This is also where the learning happens
 	as the player takes training inputs and updates its strategy over time
 	to improve its chance of winning.
 	"""
 
-	def __init__(self, strategy="random", learning_rate=.5, epsilon=.9, learning=False, load_Q=False, sign=None):
+	def __init__(self, strategy="random", learning_rate=.5, epsilon=.9, learning=False, load_Q=False, q_file = "saved_q.p", sign=None):
 		self.strategy = strategy
-		if load_Q:
-			self._Q = pickle.load(open( "save.p", "rb" ))
-		else:
-			self._Q = {} # this will hold state:action:reward
+		self._Q = self._load_Q(q_file) if load_Q else {}
 		self._learning = learning
 		self._learning_rate = learning_rate
 		self._epsilon = 0 if not learning else epsilon
 		self.sign = sign
+		self.q_file = q_file
+
+	def _load_Q(self, q_file):
+		# load Q from a pickled file
+		with open(q_file, "rb") as f:
+			self._Q = pickle.load(f)
+			return self._Q
+
+	def _write_Q(self, q_file):
+		# pickle Q, write file and save for future use
+		with open(q_file, "wb") as f:
+			pickle.dump(self._Q, f)
 
 	def choose_action(self, board, valid_actions):
 		""" Takes in the current board state and returns an action
@@ -51,7 +78,7 @@ class Player(object):
 		elif self.strategy=="human":
 			action = input("Enter move as row,col: ")
 		elif self.strategy=="basic_q":
-			# uses Q learning to determine optimal policy, with some chance epsilon of taking a random action
+			# use Q file to determine optimal policy, with some chance epsilon of taking a random action
 			
 			# compress board into 1D tuple
 			state = tuple(board.flatten())
@@ -76,6 +103,13 @@ class Player(object):
 					# give 0 initial value to this state:action pair
 					self._Q[state][action] = 0
 	    
+		elif self.strategy == "adversarial":
+			# load dictionary with specific moves to make for adversarial examples
+			state = tuple(board.flatten())
+			if state in self._Q:
+				action = self._Q[state]
+			else:
+				action = random.choice(valid_actions)
 		return action
 
 	def update_q(self, game_outcome, decisions):
@@ -84,11 +118,9 @@ class Player(object):
 
     	# determine reward
 		reward = {"won":1,"tied":0,"lost":-1}[game_outcome]
-
-    	# we should have a list of several {state:action} decisions taken during game
+    	# we should have a list of several (state,action) decisions taken during game
     	# find those and update Q values based on reward
 
-    	# TODO: update, incuding discounts. Check Q calculation.
 		for state, action in decisions:
 			old_q = self._Q[state][action]
 			new_q = (1-self._learning_rate) * old_q + self._learning_rate * reward
@@ -97,6 +129,13 @@ class Player(object):
 class Game(object):
 	""" Controls the physical board and game mechanics
 	
+	Arguments:
+		p1: player 1 ("X")
+		p2: player 2 ("O")
+		size: int representing length and width of game board
+		verbose: prints game positions to the terminal as the game happens,
+			which is very useful for debugging but slows down training.
+
 	Class is instantiated with two players and a blank board. The function
 	play_game() controls the game mechanics and updates the board as the
 	players take actions, returning a win or loss for P1.
@@ -112,7 +151,7 @@ class Game(object):
 		self.p2 = p2
 		self.p1.sign = "X"
 		self.p2.sign = "O"
-		self._verbose = verbose # prints info to console
+		self._verbose = verbose
 		self._reset_board()
 
 	def _reset_board(self):
@@ -145,7 +184,7 @@ class Game(object):
 
 	def _check_for_winner(self):
 		# get counts of X's and O's by column, row, and diagonals
-		# sets winner and outcome (win, loss, tie, or None)
+		# sets winner and outcome (win, loss, tie, or None) from P1's POV
 		for sign in ["X","O"]:
 			counts = [np.count_nonzero(self.board[:,i] == sign) for i in range(self.size)]
 			counts += [np.count_nonzero(self.board[i,:] == sign) for i in range(self.size)]
@@ -161,11 +200,20 @@ class Game(object):
 			self.outcome = "tied"
 
 	def play_game(self):
-		# run full tictactoe game
+		"""Run a single tic tac toe game, P1 vs. P2
+
+		Returns:
+			outcome: won, lost, or tied (from P1's perspective)
+			x_decisions: player 1's (state,action) decisions during the game
+			o_decisions: player 2's (state,action) decisions during the game
+		"""
 		self._reset_board()
 
 		# log player X's (state,action) decisions
 		x_decisions = []
+
+		# log player O's (state,action) decisions
+		o_decisions = []
 
 		# randomly determine who goes first
 		turn = self.p1 if random.random() <=.5 else self.p2
@@ -175,6 +223,8 @@ class Game(object):
 			action = turn.choose_action(self.board,self.valid_actions)
 			if turn.sign == "X":
 				x_decisions.append((self.flat_board,action))
+			elif turn.sign == "O":
+				o_decisions.append((self.flat_board,action))
 			self._update_board(turn, action)
 			self._check_for_winner()
 			# change turns
@@ -184,5 +234,5 @@ class Game(object):
 				print "Game ended in a tie"
 			else:
 				print "Player %s won!" %self.winner
-		return self.outcome, x_decisions
+		return self.outcome, x_decisions ,o_decisions
 
