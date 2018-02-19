@@ -220,6 +220,8 @@ class Game(object):
 		if self._verbose:
 			print "New game. %s will go first" %turn.sign
 		while self.outcome == None:
+			if self._verbose:
+				print "Player %s's turn" %turn.sign
 			action = turn.choose_action(self.board,self.valid_actions)
 			if turn.sign == "X":
 				x_decisions.append((self.flat_board,action))

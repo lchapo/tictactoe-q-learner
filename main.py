@@ -15,3 +15,5 @@ from simulator import *
 #test_learner_against_self()
 #test_learner_against_human()
 
+# uncomment the following to play against a friend
+#human_vs_human()

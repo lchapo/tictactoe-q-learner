@@ -18,6 +18,21 @@ With your AI sufficiently trained, you should be able to run *test_learner_again
 ## Understanding the Code
 [environment.py](https://github.com/lucaschapin/tictactoe-q-learner/blob/master/environment.py) contains everything needed to run a single tic tac toe game. It holds two classes, Player() and Game(), which are used to determine how a player makes moves and specify the framework for running a tic tac toe game, respectively. [simulator.py](https://github.com/lucaschapin/tictactoe-q-learner/blob/master/simulator.py) contains functions to train and test the AI over a number of games. I've included extensive commentary in both files to detail exactly how they work. [main.py](https://github.com/lucaschapin/tictactoe-q-learner/blob/master/main.py) is the file you should actually run to do the training and testing.
 
+The key piece to understand is how Q-learning works and where in the code this training process happens. Q is often thought of as a table, but in Python terms it's actually a dictionary, with board states as the keys and another dictionary as values wich contains possible actions and a Q value for those actions. For example, here's one randomly chosen key,value pair from our trained Q file:
+`('_', 'O', '_', '_', 'O', 'O', 'X', 'X', '_'): {(1, 0): 0.05, (0, 0): -0.32, (0, 2): -0.5, (2, 2): 0.32}`
+
+The tuple is a flattened version of our 2D tic tac toe game. Here's how it looks on a board:
+![](ex_board.png)
+
+The tuples, e.g. `(1,0)` represent different possible actions that X could take in (row,col) format starting with 0 since that's how counting in python works and I was too lazy to make this more user friendly :). (1,0) is the middle left, (0,0) is the top left, (0,2) is the top right, and (2,2) is the bottom right. The corresponding values are Q values for each action given the current board state, where positive values mean that taking the action will generally lead to a win, and negative values mean taking that action will generally lead to a loss. Thus the Q-learner here recommends that we play in the bottom right, which makes since because this will win the game immediately. The next highest value is for the middle left, which would block O from winning. The other values are negative, which shows that in the Q learner's experience, these moves most often result in a loss. Over time, given enough simulations where we encounter this exact board positin, we'd expect the (2,2) action for this state to keep leading to wins and we'd see the Q-value converge toward the maximum value of 1.
+
+To update Q, we use the following formula:
+$$Q(s,a) = (1- learning_rate) * old_Q(s,a) + learning_rate * reward$$
+
+The "reward" is the eventual game outcome, which is either 1 for a win, 0 for a tie, or -1 for a loss. We move Q for this particular state and action toward the reward for the outcome of the game, and the magnitude of that Q-value adjustment is dependent on our choice of learning rate.
+
+Another piece to understand is *epsilon*, the exploration factor. The *basic_q* strategy implemented in our Player() class is that given a board state, the AI will choose the action with the highest Q value, *unless* a randomly chosen number from 0 to 1 is less than *epsilon*, in which case we make a random move out of the available possible actions. In other words, *epsilon* represents a percentage chance of ignoring our existing Q learning dictionary and instead making a random move. This is crucial to the trial and error process of teaching the AI what works and what doesn't. Over time, we decrease this *epsilon* value toward 0 and we should see its win rate increase as it makes deliberate moves. We set *epsilon* to 0 when testing so we can see how well our AI has learned when it relies solely on its Q file, and we also set *epsilon* to 0 for the opponent (player "O") in self play. This allows the learner AI ("X") to continue experimenting while playing a strong player which relies only on its Q strategy.
+
 ## Requirements
 See [requirements.txt](https://github.com/lucaschapin/tictactoe-q-learner/blob/master/requirements.txt) for more details. In short, run this using Python 2.7 and make sure you have Pandas and a few supporting libraries installed. If you use the Anaconda distribution of Python, this should cover everything you need.
 
@@ -28,6 +43,7 @@ See [requirements.txt](https://github.com/lucaschapin/tictactoe-q-learner/blob/m
 * Typically in Q learning, the reward for a (state,action) pair is the expected value of the next state, choosing the optimal action. Although we don't know the next state immediately since it's the opponent's move, we could take a page out of AlphaGo's book and use Monte Carlo Tree Search to project forward what the next moves will be. Instead, I used a very simple method to update the weights which is to wait until the end of the game and use that reward to update all (state,action) pairs. This proved sufficient for tic tac toe but would not scale well to more complicated games.
 * I didn't apply a discount factor which would have helped the AI choose winning moves more quickly. This could speed up the training process.
 * While it's overkill for tic tac toe, we could build a neural net to approximate the Q strategy which would scale better to bigger data sets where Q tables are insufficient. Moreover, given the surge in interest in deep learning, it would be an interesting to compare the Q table approach directly to training a neural net to help elucidate the differences in approaches.
+* Instead of using tuples to enter moves, it would be more user friendly to input *bottom right*, *middle*, etc.
 
 ## Kudos
 In researching Q-learning in the context of adversarial games, the following sources were especially helpful:

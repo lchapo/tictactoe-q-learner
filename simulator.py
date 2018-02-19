@@ -237,3 +237,5 @@ def adversarial_training(
 			return
 	print "played %d games without losing!" %max_games
 
+def human_vs_human():
+	Game(p1=Player(strategy="human"),p2=Player(strategy="human"),verbose=True).play_game()
