@@ -11,9 +11,9 @@ from simulator import *
 #adversarial_training()
 
 # uncomment one of the following to run testing sessions
-test_learner_against_rando()
+#test_learner_against_rando()
 #test_learner_against_self()
-#test_learner_against_human()
+test_learner_against_human()
 
 # uncomment the following to play against a friend
 #human_vs_human()

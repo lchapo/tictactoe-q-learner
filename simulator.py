@@ -146,7 +146,7 @@ def train_learner_against_self(n_sessions=5, games_per_session=10000):
 		)
 		print "%d training sessions completed out of %d" %(n+1,n_sessions)
 
-def test_learner_against_rando(n_games=1000000):
+def test_learner_against_rando(n_games=10000):
 	# see how learner performs against a player making random moves
 	metrics = run_simulator(
 		p1 = Player(strategy="basic_q", learning=False, load_Q = True),
