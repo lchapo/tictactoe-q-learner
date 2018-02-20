@@ -146,11 +146,12 @@ def train_learner_against_self(n_sessions=5, games_per_session=10000):
 		)
 		print "%d training sessions completed out of %d" %(n+1,n_sessions)
 
-def test_learner_against_rando():
+def test_learner_against_rando(n_games=1000000):
 	# see how learner performs against a player making random moves
 	metrics = run_simulator(
 		p1 = Player(strategy="basic_q", learning=False, load_Q = True),
-		p2 = Player(strategy="random")
+		p2 = Player(strategy="random"),
+		n_games=n_games,
 	)
 	visualize_win_ratio(metrics,"Performance Over Time (testing)")
 
